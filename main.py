@@ -107,8 +107,9 @@ def getPlayerImageLink(id32):
 
 
 class userProfileContent(ft.UserControl):
-    def __init__(self, userName, userRankMainImgLink, userRankSecImgLink, userData, userLastMatches, userId, userImageLink):
+    def __init__(self, height, userName, userRankMainImgLink, userRankSecImgLink, userData, userLastMatches, userId, userImageLink):
         super().__init__()
+        self.height = height
         self.userName = userName
         self.userRankMainImgLink = userRankMainImgLink
         self.userRankSecImgLink = userRankSecImgLink
@@ -116,7 +117,7 @@ class userProfileContent(ft.UserControl):
         self.userLastMatches = userLastMatches
         self.userId = userId
         self.userImageLink = userImageLink
-        
+    
     def build(self):
         userDataRow = ft.Row(
             controls=[
@@ -234,7 +235,7 @@ class userProfileContent(ft.UserControl):
         )
                                   
         return ft.Column(
-            controls=[userInfoRow, ft.ListView(height=450, auto_scroll=False, controls=[topHeroDataColumn, lastMatchesColumn])]
+            controls=[userInfoRow, ft.ListView(height=self.height-170, auto_scroll=False, controls=[topHeroDataColumn, lastMatchesColumn])]
         )
         
         
@@ -274,7 +275,7 @@ class App(ft.UserControl):
             return
         lastMatchesData = getPlayerLastMatches(self.userIdField.value)
         userImage = getPlayerImageLink(self.userIdField.value)
-        content = userProfileContent(userData=data, userName=userName, userRankMainImgLink=userRankMainImgLink, userRankSecImgLink=userRankSecImgLink, userLastMatches=lastMatchesData, userId=self.userIdField.value, userImageLink=userImage)
+        content = userProfileContent(height=self.page.height, userData=data, userName=userName, userRankMainImgLink=userRankMainImgLink, userRankSecImgLink=userRankSecImgLink, userLastMatches=lastMatchesData, userId=self.userIdField.value, userImageLink=userImage)
         self.dataStats.controls.append(content)
         self.update()
 
