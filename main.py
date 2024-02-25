@@ -6,20 +6,25 @@ from fake_useragent import UserAgent
 
 ua = UserAgent().random
 headers = {'user-agent': ua}
+# headers = {}
 
 def getPlayerData(id32) -> list | None:
     url = f'https://www.dotabuff.com/players/{id32}'
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
-
+    
     accauntName = soup.find('h1').text.replace('Overview', '')
     topHeroData = []
     block = soup.find('div', 'r-table r-only-mobile-5 heroes-overview')
     private = soup.find("i", "fa fa-lock")
     if private is not None and "This profile is private" in private.get("title") or block is None:
-        return None, None, None
+        return None, None, None, None
     
-    userRank = soup.find('div', 'rank-tier-wrapper').get('title').replace("Rank: ", "")
+    # userRank = soup.find('div', 'rank-tier-wrapper').get('title').replace("Rank: ", "")
+    userRankMainImg = soup.find('img', 'rank-tier-base').get('src')
+    userRankSecImg = soup.find('img', 'rank-tier-pip')
+    userRankSecImg = userRankSecImg.get('src') if userRankSecImg is not None else None 
+
     rows = block.find_all('div', 'r-row')
     for row in rows:
         hero = {}
@@ -46,7 +51,7 @@ def getPlayerData(id32) -> list | None:
         # hero.append(lineData)
 
         topHeroData.append(hero)
-    return topHeroData, accauntName, userRank
+    return topHeroData, accauntName, userRankMainImg, userRankSecImg
 
 def getPlayerLastMatches(id32) -> list:
     url = f'https://www.dotabuff.com/players/{id32}'
@@ -102,10 +107,11 @@ def getPlayerImageLink(id32):
 
 
 class userProfileContent(ft.UserControl):
-    def __init__(self, userName, userRank, userData, userLastMatches, userId, userImageLink):
+    def __init__(self, userName, userRankMainImgLink, userRankSecImgLink, userData, userLastMatches, userId, userImageLink):
         super().__init__()
         self.userName = userName
-        self.userRank: str = userRank
+        self.userRankMainImgLink = userRankMainImgLink
+        self.userRankSecImgLink = userRankSecImgLink
         self.userData = userData
         self.userLastMatches = userLastMatches
         self.userId = userId
@@ -124,20 +130,29 @@ class userProfileContent(ft.UserControl):
                 ft.Text(value=self.userName, size=25, weight=500, tooltip=self.userId),
             ]
         )
-        if self.userRank != "Not Calibrated" and "Immortal" not in self.userRank:
-            userRankName = self.userRank.split(' ')[-2].lower()
-            userRankStars = self.userRank.split(' ')[-1]
-            userRankImg = ft.Stack(
-                            controls=[
-                                    ft.Image(src=f"/stars/{userRankStars}.png", width=70, height=70, fit=ft.ImageFit.FILL),
-                                    ft.Image(src=f"/ranks/{userRankName}.png", width=70, height=70, fit=ft.ImageFit.FILL),
-                                ]
-                            )
-        elif 'Immortal' in self.userRank:
-            userRankImg = ft.Image(src=f"/ranks/immortal.png", width=70, height=70, fit=ft.ImageFit.FILL)
+        # if self.userRank != "Not Calibrated" and "Immortal" not in self.userRank:
+        #     userRankName = self.userRank.split(' ')[-2].lower()
+        #     userRankStars = self.userRank.split(' ')[-1]
+        #     userRankImg = ft.Stack(
+        #                     controls=[
+        #                             ft.Image(src=f"/stars/{userRankStars}.png", width=70, height=70, fit=ft.ImageFit.FILL),
+        #                             ft.Image(src=f"/ranks/{userRankName}.png", width=70, height=70, fit=ft.ImageFit.FILL),
+        #                         ]
+        #                     )
+        # elif 'Immortal' in self.userRank:
+        #     userRankImg = ft.Image(src=f"/ranks/immortal.png", width=70, height=70, fit=ft.ImageFit.FILL)
+        # else:
+        #     userRankImg = ft.Image(src=f"/ranks/Not Calibrated.png", width=70, height=70, fit=ft.ImageFit.FILL)
+        if self.userRankSecImgLink is not None:
+            RankControls=[
+                ft.Image(src=self.userRankMainImgLink, width=70, height=70, fit=ft.ImageFit.FILL),
+                ft.Image(src=self.userRankSecImgLink, width=70, height=70, fit=ft.ImageFit.FILL)
+            ]
         else:
-            userRankImg = ft.Image(src=f"/ranks/Not Calibrated.png", width=70, height=70, fit=ft.ImageFit.FILL)
-            
+            RankControls=[
+                ft.Image(src=self.userRankMainImgLink, width=70, height=70, fit=ft.ImageFit.FILL)
+            ]
+        userRankImg = ft.Stack(controls=RankControls)  
         userInfoRow = ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[userDataRow, userRankImg])
         topHeroRows = []
         lastMatchesRows = []
@@ -250,15 +265,16 @@ class App(ft.UserControl):
 
     
     def search(self, e):
-        data, userName, userRank = getPlayerData(self.userIdField.value)
+        data, userName, userRankMainImgLink, userRankSecImgLink = getPlayerData(self.userIdField.value)
         self.dataStats.controls = []
+        self.update()
         if data is None: #IF profile is private or 
             self.dataStats.controls.append(ft.Text(value="Пользователь не найден или его профиль закрыт!", color=ft.colors.RED_900,  text_align=ft.TextAlign.CENTER))
             self.update()
             return
         lastMatchesData = getPlayerLastMatches(self.userIdField.value)
         userImage = getPlayerImageLink(self.userIdField.value)
-        content = userProfileContent(userData=data, userName=userName, userRank=userRank, userLastMatches=lastMatchesData, userId=self.userIdField.value, userImageLink=userImage)
+        content = userProfileContent(userData=data, userName=userName, userRankMainImgLink=userRankMainImgLink, userRankSecImgLink=userRankSecImgLink, userLastMatches=lastMatchesData, userId=self.userIdField.value, userImageLink=userImage)
         self.dataStats.controls.append(content)
         self.update()
 
