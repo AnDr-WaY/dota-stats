@@ -1,6 +1,5 @@
 /.venv
 .venv
 .gitignore
-/dist
 /build
 main.spec
