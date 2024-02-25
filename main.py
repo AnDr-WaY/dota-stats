@@ -13,13 +13,13 @@ def getPlayerData(id32) -> list | None:
     soup = BeautifulSoup(response.text, 'html.parser')
 
     accauntName = soup.find('h1').text.replace('Overview', '')
-    userRank = soup.find('div', 'rank-tier-wrapper').get('title').replace("Rank: ", "")
     topHeroData = []
     block = soup.find('div', 'r-table r-only-mobile-5 heroes-overview')
     private = soup.find("i", "fa fa-lock")
     if private is not None and "This profile is private" in private.get("title") or block is None:
-        return None
+        return None, None, None
     
+    userRank = soup.find('div', 'rank-tier-wrapper').get('title').replace("Rank: ", "")
     rows = block.find_all('div', 'r-row')
     for row in rows:
         hero = {}
