@@ -13,29 +13,40 @@ def getPlayerData(id32) -> list | None:
     soup = BeautifulSoup(response.text, 'html.parser')
 
     accauntName = soup.find('h1').text.replace('Overview', '')
-
+    userRank = soup.find('div', 'rank-tier-wrapper').get('title').replace("Rank: ", "")
     topHeroData = []
     block = soup.find('div', 'r-table r-only-mobile-5 heroes-overview')
     private = soup.find("i", "fa fa-lock")
-    if private is not None and "This profile is private" in private.get("title"):
+    if private is not None and "This profile is private" in private.get("title") or block is None:
         return None
     
     rows = block.find_all('div', 'r-row')
     for row in rows:
-        hero = []
+        hero = {}
         heroName = row.find('div', 'r-none-mobile').find('a').text
-        hero.append(heroName)
+        hero['name'] = heroName
+        heroImgLink = row.find("img", 'image-hero image-icon').get('src')
+        hero['img'] = "https://www.dotabuff.com"+heroImgLink
         graphs = row.find_all('div', 'r-line-graph')
+        grahpIndex = 1
         for graph in graphs:
             graphdata = graph.find('div', 'r-body').text
-            hero.append(graphdata)
+            if grahpIndex == 1:
+                hero['matches'] = graphdata
+            elif grahpIndex == 2:
+                hero['winrate'] = graphdata
+            elif grahpIndex == 3:
+                hero['kda'] = graphdata
+            grahpIndex+=1
+            
+            
         # roleData = row.find('div', 'r-role-graph').find('div', 'group').text.replace(' ', '')
         # lineData = row.find('div', 'r-lane-graph').find('div', 'group').text.replace(' ', '')
         # hero.append(roleData)
         # hero.append(lineData)
 
         topHeroData.append(hero)
-    return topHeroData
+    return topHeroData, accauntName, userRank
 
 def getPlayerLastMatches(id32) -> list:
     url = f'https://www.dotabuff.com/players/{id32}'
@@ -47,12 +58,12 @@ def getPlayerLastMatches(id32) -> list:
     rows = block.find_all('div', 'r-row')
 
     for row in rows:
-        match = []
+        match = {}
 
         heroName = row.find('div', 'r-body').find('a').find_next('a').text
-        match.append(heroName)
+        heroImgLink = row.find("img", 'image-hero image-icon').get('src')
+        heroImgLink = "https://www.dotabuff.com"+heroImgLink
         rank = row.find('div', 'r-body').find('div', 'subtext').text
-        match.append(rank)
 
         matchResult = row.find('div', 'r-match-result').find('div', 'r-body')
         matchWinOrLost = matchResult.find('a').text
@@ -68,18 +79,20 @@ def getPlayerLastMatches(id32) -> list:
 
         matchKDA = matchDurationBlock.find_next('div', 'r-line-graph').find('div', 'r-body').text
 
-        match.append(matchWinOrLost)
-        match.append(matchDate)
-        match.append(matchRanked)
-        match.append(matchRezim)
-        match.append(matchDuration)
-        match.append(matchKDA)
+        match['heroName'] = heroName
+        match['heroImg'] = heroImgLink
+        match['rank'] = rank
+        match['result'] = matchWinOrLost
+        match['date'] = matchDate
+        match['type'] = matchRanked
+        match['mode'] = matchRezim
+        match['duration'] = matchDuration
+        match['kda'] = matchKDA
 
         lastPlayedData.append(match)
     return lastPlayedData
 
-
-def getPlayerImage(id32):
+def getPlayerImageLink(id32):
     url = f'https://www.dotabuff.com/players/{id32}'
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -89,9 +102,48 @@ def getPlayerImage(id32):
 
 
 class userProfileContent(ft.UserControl):
-    def __init__(self):
-        super.__init__(self)
-
+    def __init__(self, userName, userRank, userData, userLastMatches, userId, userImageLink):
+        super().__init__()
+        self.userName = userName
+        self.userRank: str = userRank
+        self.userData = userData
+        self.userLastMatches = userLastMatches
+        self.userId = userId
+        self.userImageLink = userImageLink
+        
+    def build(self):
+        userDataRow = ft.Row(
+            controls=[
+                ft.Image(
+                    src=self.userImageLink,
+                    width=50,
+                    height=50,
+                    fit=ft.ImageFit.FILL,
+                    repeat=ft.ImageRepeat.NO_REPEAT,
+                ),
+                ft.Text(value=self.userName, size=25, weight=500, tooltip=self.userId),
+            ]
+        )
+        if self.userRank != "Not Calibrated" and "Immortal" not in self.userRank:
+            userRankName = self.userRank.split(' ')[-2].lower()
+            userRankStars = self.userRank.split(' ')[-1]
+            userRankImg = ft.Stack(
+                            controls=[
+                                    ft.Image(src=f"/stars/{userRankStars}.png", width=70, height=70, fit=ft.ImageFit.FILL),
+                                    ft.Image(src=f"/ranks/{userRankName}.png", width=70, height=70, fit=ft.ImageFit.FILL),
+                                ]
+                            )
+        elif 'Immortal' in self.userRank:
+            userRankImg = ft.Image(src=f"/ranks/immortal.png", width=70, height=70, fit=ft.ImageFit.FILL)
+        else:
+            userRankImg = ft.Image(src=f"/ranks/Not Calibrated.png", width=70, height=70, fit=ft.ImageFit.FILL,)
+            
+        userInfoRow = ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[userDataRow, userRankImg])
+        
+                                  
+        return 
+        
+        
 
 class App(ft.UserControl):
     def __init__(self):
@@ -119,16 +171,18 @@ class App(ft.UserControl):
 
     
     def search(self, e):
-        data = getPlayerData(self.userIdField.value)
+        data, userName, userRank = getPlayerData(self.userIdField.value)
         self.dataStats.controls = []
-        if data is None:
+        if data is None: #IF profile is private or 
             self.dataStats.controls.append(ft.Text(value="Пользователь не найден или его профиль закрыт!", color=ft.colors.RED_900,  text_align=ft.TextAlign.CENTER))
             self.update()
             return
-        print(data)
-
-
-
+        lastMatchesData = getPlayerLastMatches(self.userIdField.value)
+        userImage = getPlayerImageLink(self.userIdField.value)
+        content = userProfileContent(userData=data, userName=userName, userRank=userRank, userLastMatches=lastMatchesData, userId=self.userIdField.value, userImageLink=userImage)
+        self.dataStats.controls.append(content)
+        self.update()
+        
 
 def main(page: ft.Page):
     page.title = "Dota stats"
@@ -143,4 +197,4 @@ def main(page: ft.Page):
 
     page.add(app)
 
-ft.app(target=main)
+ft.app(target=main, assets_dir="assets")
