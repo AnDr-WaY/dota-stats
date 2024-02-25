@@ -261,7 +261,7 @@ class App(ft.UserControl):
         content = userProfileContent(userData=data, userName=userName, userRank=userRank, userLastMatches=lastMatchesData, userId=self.userIdField.value, userImageLink=userImage)
         self.dataStats.controls.append(content)
         self.update()
-        
+
 
 def main(page: ft.Page):
     page.title = "Dota stats"
