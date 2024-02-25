@@ -136,12 +136,91 @@ class userProfileContent(ft.UserControl):
         elif 'Immortal' in self.userRank:
             userRankImg = ft.Image(src=f"/ranks/immortal.png", width=70, height=70, fit=ft.ImageFit.FILL)
         else:
-            userRankImg = ft.Image(src=f"/ranks/Not Calibrated.png", width=70, height=70, fit=ft.ImageFit.FILL,)
+            userRankImg = ft.Image(src=f"/ranks/Not Calibrated.png", width=70, height=70, fit=ft.ImageFit.FILL)
             
         userInfoRow = ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[userDataRow, userRankImg])
+        topHeroRows = []
+        lastMatchesRows = []
+        for hero in self.userData:
+            topHeroRows.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(
+                            ft.Image(width=65, src=hero['img'], tooltip=hero['name'])
+                        ),
+                        ft.DataCell(
+                            ft.Text(hero['matches'])
+                        ),
+                        ft.DataCell(
+                            ft.Text(hero['winrate'])
+                        ),
+                        ft.DataCell(
+                            ft.Text(hero['kda'])
+                        ),
+                    ]
+                )
+            )
+            
+        for hero in self.userLastMatches:
+            lastMatchesRows.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(
+                            ft.Image(width=65, src=hero['heroImg'], tooltip=hero['heroName'])
+                        ),
+                        ft.DataCell(
+                            ft.Text(hero['result'], color="#722622" if hero['result'] == "Lost Match" else ft.colors.GREEN)
+                        ),
+                        ft.DataCell(
+                            ft.Text(f"{hero['type']}\n", spans=[ft.TextSpan(hero['mode'], style=ft.TextStyle(color=ft.colors.GREY, size=12))]),      
+                        ),
+                        ft.DataCell(
+                            ft.Text(hero['duration'])
+                        ),
+                        ft.DataCell(
+                            ft.Text(hero['kda'])
+                        ),
+                    ]
+                )
+            )
+            
+        topHeroDataColumn = ft.Column(
+            controls=[
+                ft.Text(value="Герои с найбольшим количеством игр", size=20, weight=500),
+                ft.DataTable(
+                    width=2000,
+                    columns=[
+                        ft.DataColumn(ft.Text("Герой")),
+                        ft.DataColumn(ft.Text("Матчей")),
+                        ft.DataColumn(ft.Text("Винрейт")),
+                        ft.DataColumn(ft.Text("KDA")),
+                    ],
+                    rows=topHeroRows
+                )
+            ]
+        )
         
+        lastMatchesColumn = ft.Column(
+            controls=[
+                ft.Text(value="Последние матчи", size=20, weight=500),
+                ft.DataTable(
+                    width=2000,
+                    columns=[
+                        ft.DataColumn(ft.Text("Герой")),
+                        ft.DataColumn(ft.Text("Результат")),
+                        ft.DataColumn(ft.Text("Режим")),
+                        ft.DataColumn(ft.Text("Время")),
+                        ft.DataColumn(ft.Text("KDA")),
+                    ],
+                    rows=lastMatchesRows,
+                    column_spacing=-10
+                )
+            ]
+        )
                                   
-        return 
+        return ft.Column(
+            controls=[userInfoRow, ft.ListView(height=450, auto_scroll=False, controls=[topHeroDataColumn, lastMatchesColumn])]
+        )
         
         
 
@@ -186,8 +265,8 @@ class App(ft.UserControl):
 
 def main(page: ft.Page):
     page.title = "Dota stats"
-    page.window_min_width=350
-    page.window_min_height=450
+    page.window_min_width=450
+    page.window_min_height=650
     page.window_width = 450
     page.window_height = 650
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
