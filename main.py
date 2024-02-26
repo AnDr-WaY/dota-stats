@@ -1,12 +1,24 @@
 import flet as ft
 import requests
+import win32gui
+import win32con
 from bs4 import BeautifulSoup
 from typing import List, Union
 from fake_useragent import UserAgent
 
+
 ua = UserAgent().random
 headers = {'user-agent': ua}
 # headers = {}
+
+def set_window_above(app):
+    hwnd = win32gui.FindWindow(None, app.title)
+    win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0, win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+
+def clear_window_above(app):
+    hwnd = win32gui.FindWindow(None, app.title)
+    win32gui.SetWindowPos(hwnd, win32con.HWND_NOTOPMOST, 0, 0, 0, 0, win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+
 
 def getPlayerData(id32) -> list | None:
     url = f'https://www.dotabuff.com/players/{id32}'
@@ -236,34 +248,39 @@ class userProfileContent(ft.UserControl):
                                   
         return ft.Column(
             controls=[userInfoRow, ft.ListView(height=self.height-170, auto_scroll=False, controls=[topHeroDataColumn, lastMatchesColumn])]
-        )
-        
-        
+        )     
 
 class App(ft.UserControl):
     def __init__(self):
         super().__init__()
-    
+        self.setOnTop = False
     
     def build(self):
         self.userIdField = ft.TextField(value="", text_align="left", expand=True, label="User steam 32id")
         self.searchButton = ft.IconButton(ft.icons.SEARCH_OUTLINED, on_click=self.search)
+        self.testBtn = ft.IconButton(icon=ft.icons.PUSH_PIN_OUTLINED, on_click=self.make_on_top)
         self.dataStats = ft.Column(controls=[])
-
 
         return ft.Column(
             controls=[
                 ft.Row(
                     controls=[
                         self.userIdField,
-                        self.searchButton
+                        self.searchButton,
+                        self.testBtn
                     ],
                 ),
                 self.dataStats,
             ],
         )
 
-
+    def make_on_top(self, e):
+        if self.setOnTop:
+            clear_window_above(self.page)
+            self.setOnTop = False
+        else:
+            set_window_above(self.page)
+            self.setOnTop = True
     
     def search(self, e):
         data, userName, userRankMainImgLink, userRankSecImgLink = getPlayerData(self.userIdField.value)
@@ -293,4 +310,4 @@ def main(page: ft.Page):
 
     page.add(app)
 
-ft.app(target=main, assets_dir="assets")
+ft.app(target=main)
