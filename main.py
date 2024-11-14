@@ -69,7 +69,6 @@ def getPlayerLastMatches(id32) -> list:
     url = f'https://www.dotabuff.com/players/{id32}'
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
-
     block = soup.find('div', 'r-table r-only-mobile-5 performances-overview')
     lastPlayedData = []
     rows = block.find_all('div', 'r-row')
@@ -78,7 +77,8 @@ def getPlayerLastMatches(id32) -> list:
         match = {}
 
         heroName = row.find('div', 'r-body').find('a').find_next('a').text
-        heroImgLink = row.find("img", 'image-hero image-icon').get('src')
+        heroImgLink = row.find("img", 'tw-w-auto tw-h-6 sm:tw-h-8 tw-shrink-0 tw-rounded-sm tw-shadow-sm tw-shadow-black/20').get('src')
+            
         heroImgLink = "https://www.dotabuff.com"+heroImgLink
         rank = row.find('div', 'r-body').find('div', 'subtext').text
 
