@@ -9,7 +9,6 @@ from fake_useragent import UserAgent
 
 ua = UserAgent().random
 headers = {'user-agent': ua}
-# headers = {}
 
 def set_window_above(app):
     hwnd = win32gui.FindWindow(None, app.title)
@@ -143,6 +142,8 @@ class userProfileContent(ft.UserControl):
                 ft.Text(value=self.userName, size=25, weight=500, tooltip=self.userId),
             ]
         )
+        
+        #Not using local rank images anymore. Saved for fututre
         # if self.userRank != "Not Calibrated" and "Immortal" not in self.userRank:
         #     userRankName = self.userRank.split(' ')[-2].lower()
         #     userRankStars = self.userRank.split(' ')[-1]
@@ -156,6 +157,7 @@ class userProfileContent(ft.UserControl):
         #     userRankImg = ft.Image(src=f"/ranks/immortal.png", width=70, height=70, fit=ft.ImageFit.FILL)
         # else:
         #     userRankImg = ft.Image(src=f"/ranks/Not Calibrated.png", width=70, height=70, fit=ft.ImageFit.FILL)
+        
         if self.userRankSecImgLink is not None:
             RankControls=[
                 ft.Image(src=self.userRankMainImgLink, width=70, height=70, fit=ft.ImageFit.FILL),
@@ -214,13 +216,13 @@ class userProfileContent(ft.UserControl):
             
         topHeroDataColumn = ft.Column(
             controls=[
-                ft.Text(value="Герои с найбольшим количеством игр", size=20, weight=500),
+                ft.Text(value="Most Played Heroes", size=20, weight=500),
                 ft.DataTable(
                     width=2000,
                     columns=[
-                        ft.DataColumn(ft.Text("Герой")),
-                        ft.DataColumn(ft.Text("Матчей")),
-                        ft.DataColumn(ft.Text("Винрейт")),
+                        ft.DataColumn(ft.Text("Hero")),
+                        ft.DataColumn(ft.Text("Matches")),
+                        ft.DataColumn(ft.Text("Winrate")),
                         ft.DataColumn(ft.Text("KDA")),
                     ],
                     rows=topHeroRows
@@ -230,14 +232,14 @@ class userProfileContent(ft.UserControl):
         
         lastMatchesColumn = ft.Column(
             controls=[
-                ft.Text(value="Последние матчи", size=20, weight=500),
+                ft.Text(value="Latest Matches", size=20, weight=500),
                 ft.DataTable(
                     width=2000,
                     columns=[
-                        ft.DataColumn(ft.Text("Герой")),
-                        ft.DataColumn(ft.Text("Результат")),
-                        ft.DataColumn(ft.Text("Режим")),
-                        ft.DataColumn(ft.Text("Время")),
+                        ft.DataColumn(ft.Text("Hero")),
+                        ft.DataColumn(ft.Text("Result")),
+                        ft.DataColumn(ft.Text("Type")),
+                        ft.DataColumn(ft.Text("Duration")),
                         ft.DataColumn(ft.Text("KDA")),
                     ],
                     rows=lastMatchesRows,
@@ -287,7 +289,7 @@ class App(ft.UserControl):
         self.dataStats.controls = []
         self.update()
         if data is None: #IF profile is private or 
-            self.dataStats.controls.append(ft.Text(value="Пользователь не найден или его профиль закрыт!", color=ft.colors.RED_900,  text_align=ft.TextAlign.CENTER))
+            self.dataStats.controls.append(ft.Text(value="User not found or profile is closed!", color=ft.colors.RED_900,  text_align=ft.TextAlign.CENTER))
             self.update()
             return
         lastMatchesData = getPlayerLastMatches(self.userIdField.value)
