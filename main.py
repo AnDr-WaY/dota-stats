@@ -18,7 +18,6 @@ def clear_window_above(app):
     hwnd = win32gui.FindWindow(None, app.title)
     win32gui.SetWindowPos(hwnd, win32con.HWND_NOTOPMOST, 0, 0, 0, 0, win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
 
-
 def getPlayerData(id32) -> list | None:
     url = f'https://www.dotabuff.com/players/{id32}'
     response = requests.get(url, headers=headers)
@@ -116,7 +115,6 @@ def getPlayerImageLink(id32):
     imgLink = soup.find('img', 'image-player image-bigavatar')['src']
     return imgLink
 
-
 class userProfileContent(ft.UserControl):
     def __init__(self, height, userName, userRankMainImgLink, userRankSecImgLink, userData, userLastMatches, userId, userImageLink):
         super().__init__()
@@ -128,6 +126,10 @@ class userProfileContent(ft.UserControl):
         self.userLastMatches = userLastMatches
         self.userId = userId
         self.userImageLink = userImageLink
+        
+    
+    def set_height(self, height: int):
+        self.height = height
     
     def build(self):
         userDataRow = ft.Row(
@@ -256,7 +258,9 @@ class App(ft.UserControl):
     def __init__(self):
         super().__init__()
         self.setOnTop = False
-    
+        self.content = None
+        self.lastData = {}
+        
     def build(self):
         self.userIdField = ft.TextField(value="", text_align="left", expand=True, label="User steam 32id")
         self.searchButton = ft.IconButton(ft.icons.SEARCH_OUTLINED, on_click=self.search)
@@ -288,16 +292,47 @@ class App(ft.UserControl):
         data, userName, userRankMainImgLink, userRankSecImgLink = getPlayerData(self.userIdField.value)
         self.dataStats.controls = []
         self.update()
-        if data is None: #IF profile is private or 
+        if data is None: #IF profile is closed or not found
             self.dataStats.controls.append(ft.Text(value="User not found or profile is closed!", color=ft.colors.RED_900,  text_align=ft.TextAlign.CENTER))
             self.update()
             return
         lastMatchesData = getPlayerLastMatches(self.userIdField.value)
         userImage = getPlayerImageLink(self.userIdField.value)
-        content = userProfileContent(height=self.page.height, userData=data, userName=userName, userRankMainImgLink=userRankMainImgLink, userRankSecImgLink=userRankSecImgLink, userLastMatches=lastMatchesData, userId=self.userIdField.value, userImageLink=userImage)
-        self.dataStats.controls.append(content)
+        self.lastData = {
+            'data': data,
+            'userName': userName,
+            'userRankMainImgLink': userRankMainImgLink,
+            'userRankSecImgLink': userRankSecImgLink,
+            'userLastMatches': lastMatchesData,
+            'userImageLink': userImage
+        }
+        self.content = userProfileContent(
+            height=self.page.height,
+            userData=data,
+            userName=userName,
+            userRankMainImgLink=userRankMainImgLink,
+            userRankSecImgLink=userRankSecImgLink,
+            userLastMatches=lastMatchesData,
+            userId=self.userIdField.value,
+            userImageLink=userImage,
+        )
+        self.dataStats.controls.append(self.content)
         self.update()
 
+    def resize(self, e: ft.ControlEvent):
+        if self.lastData != {}:
+            self.content = userProfileContent(
+                height=self.page.height,
+                userData=self.lastData['data'],
+                userName=self.lastData['userName'],
+                userRankMainImgLink=self.lastData['userRankMainImgLink'],
+                userRankSecImgLink=self.lastData['userRankSecImgLink'],
+                userLastMatches=self.lastData['userLastMatches'],
+                userId=self.userIdField.value,
+                userImageLink=self.lastData['userImageLink'],
+            )
+            self.dataStats.controls = [self.content] 
+            self.update()
 
 def main(page: ft.Page):
     page.title = "Dota stats"
@@ -306,10 +341,10 @@ def main(page: ft.Page):
     page.window_width = 450
     page.window_height = 650
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.update()
 
     app = App()
-
+    page.on_resize = app.resize
     page.add(app)
+    page.update()
 
 ft.app(target=main)
