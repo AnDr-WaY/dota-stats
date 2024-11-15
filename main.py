@@ -264,7 +264,7 @@ class App(ft.UserControl):
     def build(self):
         self.userIdField = ft.TextField(value="", text_align="left", expand=True, label="User steam 32id")
         self.searchButton = ft.IconButton(ft.icons.SEARCH_OUTLINED, on_click=self.search)
-        self.testBtn = ft.IconButton(icon=ft.icons.PUSH_PIN_OUTLINED, on_click=self.make_on_top)
+        self.pinBtn = ft.IconButton(icon=ft.icons.PUSH_PIN_OUTLINED, on_click=self.make_on_top)
         self.dataStats = ft.Column(controls=[])
 
         return ft.Column(
@@ -273,7 +273,7 @@ class App(ft.UserControl):
                     controls=[
                         self.userIdField,
                         self.searchButton,
-                        self.testBtn
+                        self.pinBtn
                     ],
                 ),
                 self.dataStats,
